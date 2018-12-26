@@ -1,0 +1,16 @@
+/.vs/
+/Debug/
+/x64/
+/deps/
+/Beast/Debug/
+/Beast/x64/
+/HTTPClient1/Debug/
+/HTTPClient1/x64/
+/HttpServer2/Debug/
+/HttpServer2/x64/
+/WSClient1/Debug/
+/WSClient1/x64/
+/WSHttpServer/Debug/
+/WSHttpServer/x64/
+/WSServer1/Debug/
+/WSServer1/x64/
