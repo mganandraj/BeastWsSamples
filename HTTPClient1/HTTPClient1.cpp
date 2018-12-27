@@ -96,31 +96,40 @@ int main(int argc, char** argv)
 		// Perform the websocket handshake
 		ws.handshake(host, "/");
 
-		// Send the message
-		ws.write(boost::asio::buffer(std::string(text)));
+    ws.write(boost::asio::buffer(std::string("Hello")));
+
+    ws.write(boost::asio::buffer(std::string("How")));
+
+    ws.write(boost::asio::buffer(std::string("are")));
+
+    ws.write(boost::asio::buffer(std::string("you ?")));
+
+		//// Send the message
+		//ws.write(boost::asio::buffer(std::string(text)));
 
 		// This buffer will hold the incoming message
 		boost::beast::multi_buffer buffer2;
 
-		// Read a message into our buffer
+		//// Read a message into our buffer
 		ws.read(buffer2);
 
-		// This buffer will hold the incoming message
-		 boost::beast::multi_buffer buffer3;
+    // The buffers() function helps print a ConstBufferSequence
+    std::cout << "WS read : " << boost::beast::buffers(buffer2.data()) << std::endl;
 
-		// Read a message into our buffer
-		ws.read(buffer3);
+		//// This buffer will hold the incoming message
+		//boost::beast::multi_buffer buffer3;
+
+		//// Read a message into our buffer
+		//ws.read(buffer3);
 
 		// Close the WebSocket connection
 		ws.close(websocket::close_code::normal);
 
-		// If we get here then the connection is closed gracefully
+	  // If we get here then the connection is closed gracefully
 
+		
 		// The buffers() function helps print a ConstBufferSequence
-		std::cout << boost::beast::buffers(buffer2.data()) << std::endl;
-
-		// The buffers() function helps print a ConstBufferSequence
-		std::cout << boost::beast::buffers(buffer3.data()) << std::endl;
+		//std::cout << boost::beast::buffers(buffer3.data()) << std::endl;
 
 		// Gracefully close the socket
 		boost::system::error_code ec;

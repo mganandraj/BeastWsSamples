@@ -77,8 +77,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>G:\devtools\boost\boost_system-vc141.1.68.0.0\lib\native;G:\devtools\boost\boost_date_time-vc141.1.68.0.0\lib\native;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);G:\devtools\boost\boost.1.68.0.0\lib\native\include</IncludePath>
+    <LibraryPath>..\deps\boost_system-vc141.1.68.0.0\lib\native;..\deps\boost_date_time-vc141.1.68.0.0\lib\native;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\deps\boost.1.68.0.0\lib\native\include</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>

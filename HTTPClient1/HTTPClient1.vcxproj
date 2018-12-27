@@ -72,8 +72,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);G:\devtools\boost\boost.1.68.0.0\lib\native\include</IncludePath>
-    <LibraryPath>G:\devtools\boost\boost_system-vc141.1.68.0.0\lib\native;G:\devtools\boost\boost_date_time-vc141.1.68.0.0\lib\native;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\deps\boost.1.68.0.0\lib\native\include</IncludePath>
+    <LibraryPath>..\deps\boost_system-vc141.1.68.0.0\lib\native;..\deps\boost_date_time-vc141.1.68.0.0\lib\native;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>

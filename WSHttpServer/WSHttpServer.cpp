@@ -34,6 +34,8 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <queue>
+#include <mutex>
 
 using tcp = boost::asio::ip::tcp;               // from <boost/asio/ip/tcp.hpp>
 namespace http = boost::beast::http;            // from <boost/beast/http.hpp>
@@ -226,12 +228,20 @@ class websocket_session : public std::enable_shared_from_this<websocket_session>
         boost::asio::io_context::executor_type> strand_;
     boost::beast::multi_buffer buffer_;
 
+    boost::beast::multi_buffer bufferForWrite_;
+    
+    std::mutex queueAccessMutex;
+    std::queue<std::string> outQueue;
+
+    boost::asio::steady_timer timer_;
+    
 public:
     // Take ownership of the socket
     explicit
     websocket_session(tcp::socket socket)
         : ws_(std::move(socket))
         , strand_(ws_.get_executor())
+        , timer_(ws_.get_executor().context(), (std::chrono::steady_clock::time_point::min)())
     {
     }
 
@@ -251,6 +261,7 @@ public:
                     std::placeholders::_1)));
     }
 
+    // Called when the timer expires.
     void
     on_accept(boost::system::error_code ec)
     {
@@ -280,23 +291,6 @@ public:
                     std::placeholders::_2)));
     }
 
-	void write(std::string text) {
-		ws_.async_write(boost::asio::buffer(text), boost::asio::bind_executor(
-			strand_,
-			std::bind(
-				&websocket_session::on_write2,
-				shared_from_this(),
-				std::placeholders::_1,
-				std::placeholders::_2)));
-	}
-
-	void on_write2(
-		boost::system::error_code ec,
-		std::size_t bytes_transferred)
-	{
-		//std::cout << "on_write2" << std::endl;
-	}
-
     void
     on_read(
         boost::system::error_code ec,
@@ -315,17 +309,69 @@ public:
         if(ec)
             fail(ec, "read");
 
-        // Echo the message
-        ws_.text(ws_.got_text());
-        ws_.async_write(
-            buffer_.data(),
-            boost::asio::bind_executor(
-                strand_,
-                std::bind(
-                    &websocket_session::on_write,
-                    shared_from_this(),
-                    std::placeholders::_1,
-                    std::placeholders::_2)));
+        std::cout << "Received: " << boost::beast::buffers(buffer_.data()) << std::endl;
+
+        // Clear the buffer
+        buffer_.consume(buffer_.size());
+
+        // Do another read
+        do_read();
+
+    }
+
+    // This can be called from any thread.
+    void write(std::string text) {
+      queueAccessMutex.lock();
+      bool first = outQueue.empty();
+      outQueue.push(std::move(text));
+      queueAccessMutex.unlock();
+
+      // If freshly added into queue, start the timer which starts writing ...
+      if (first) {
+        timer_.async_wait(
+          boost::asio::bind_executor(
+            strand_,
+            std::bind(
+              &websocket_session::on_timer,
+              shared_from_this(),
+              std::placeholders::_1)));
+      }
+    }
+
+    void on_timer(boost::system::error_code ec)
+    {
+      if (ec && ec != boost::asio::error::operation_aborted)
+        return fail(ec, "timer");
+
+      std::cout << "on_timer .. " << std::endl;
+
+
+      do_write();
+    }
+
+    void do_write()
+    {
+      queueAccessMutex.lock();
+      if (outQueue.empty()) return;
+      std::string message = outQueue.front();
+      outQueue.pop();
+      queueAccessMutex.unlock();
+
+      std::cout << "Writing: " << message << std::endl;
+
+      size_t n = buffer_copy(bufferForWrite_.prepare(message.size()), boost::asio::buffer(message));
+      bufferForWrite_.commit(n);
+
+      ws_.text(true);
+      ws_.async_write(
+        bufferForWrite_.data(),
+        boost::asio::bind_executor(
+          strand_,
+          std::bind(
+            &websocket_session::on_write,
+            shared_from_this(),
+            std::placeholders::_1,
+            std::placeholders::_2)));
     }
 
     void
@@ -335,7 +381,7 @@ public:
     {
         boost::ignore_unused(bytes_transferred);
 
-		std::cout << "111" << std::endl;
+
 
         // Happens when the timer closes the socket
         if(ec == boost::asio::error::operation_aborted)
@@ -344,11 +390,14 @@ public:
         if(ec)
             return fail(ec, "write");
 
-        // Clear the buffer
-        buffer_.consume(buffer_.size());
+        std::cout << "Writing completed .. " << bytes_transferred << " bytes." << std::endl;
 
-        // Do another read
-        do_read();
+        // Clear the buffer
+        // buffer_.consume(buffer_.size());
+
+        // do another write
+        do_write();
+
     }
 };
 
@@ -455,9 +504,9 @@ public:
         if(websocket::is_upgrade(req_))
         {
             // Create a WebSocket websocket_session by transferring the socket
-			ws_session = std::make_shared<websocket_session>(
-				std::move(socket_));
-			ws_session->run(std::move(req_));
+			      ws_session = std::make_shared<websocket_session>(
+				    std::move(socket_));
+			      ws_session->run(std::move(req_));
             return;
         }
 
@@ -584,7 +633,7 @@ public:
         }
 
         // Accept another connection
-        do_accept();
+        // do_accept();
     }
 };
 
@@ -612,5 +661,5 @@ int main(int argc, char* argv[])
 
 	getchar();
 
-    return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }
